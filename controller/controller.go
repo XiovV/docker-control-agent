@@ -117,17 +117,17 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 }
 
 func (dc *DockerController) restoreContainer(oldContainerId, newContainerId, originalName string) error {
-	fmt.Printf("removing container %s\n", newContainerId)
+	fmt.Printf("RESTORE: removing container %s\n", newContainerId)
 	if err := dc.removeContainer(newContainerId); err != nil {
 		return err
 	}
 
-	fmt.Printf("renaming %s to %s\n", oldContainerId, originalName)
+	fmt.Printf("RESTORE: renaming %s to %s\n", oldContainerId, originalName)
 	if err := dc.renameContainer(oldContainerId, originalName); err != nil {
 		return err
 	}
 
-	fmt.Printf("starting container %s\n", oldContainerId)
+	fmt.Printf("RESTORE: starting container %s\n", oldContainerId)
 	if err := dc.startContainer(oldContainerId); err != nil {
 		return err
 	}

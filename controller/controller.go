@@ -72,8 +72,6 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 		return fmt.Errorf("couldn't rename container: %w", err)
 	}
 
-	configCopy.setImageTag(imageTag)
-
 	fmt.Println("creating new container...")
 	newContainerId, err := dc.createContainer(configCopy, configCopy.ContainerConfig.Image, imageTag)
 	if err != nil {
@@ -152,12 +150,17 @@ func (dc *DockerController) createContainer(config OldContainerConfig, imageName
 	imageSplit := strings.Split(imageName, ":")
 	baseImage := imageSplit[0]
 
-	fmt.Println("PULLING: ", baseImage+":"+imageTag)
-	_, err := dc.cli.ImagePull(dc.ctx, baseImage+":"+imageTag, types.ImagePullOptions{})
+	newImage := baseImage+":"+imageTag
+
+	fmt.Println("PULLING: ", newImage)
+	_, err := dc.cli.ImagePull(dc.ctx, newImage, types.ImagePullOptions{})
 	if err != nil {
 		return "", err
 	}
 
+	config.ContainerConfig.Image = newImage
+
+	fmt.Println("CREATING NEW CONTAINER:", newImage)
 	resp, err := dc.cli.ContainerCreate(dc.ctx, config.ContainerConfig, config.ContainerHostConfig, nil, nil, config.ContainerName)
 	if err != nil {
 		return "", err

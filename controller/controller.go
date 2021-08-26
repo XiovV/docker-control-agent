@@ -77,6 +77,7 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 	fmt.Println("creating new container...")
 	newContainerId, err := dc.createContainer(configCopy, configCopy.ContainerConfig.Image, imageTag)
 	if err != nil {
+		fmt.Println("couldn't create new container:", err)
 		if err := dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
 			return fmt.Errorf("couldn't restore old container: %w", err)
 		}

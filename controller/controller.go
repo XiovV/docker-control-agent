@@ -67,6 +67,11 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 		return fmt.Errorf("couldn't copy container confi: %w", err)
 	}
 
+	fmt.Println("pulling new image...")
+	if err := dc.PullImage(configCopy.ContainerConfig.Image, imageTag); err != nil {
+		return fmt.Errorf("couldn't pull image")
+	}
+
 	fmt.Printf("renaming %s (%s) to %s-old\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
 	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-old"); err != nil {
 		return fmt.Errorf("couldn't rename container: %w", err)
@@ -74,14 +79,12 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 
 	configCopy.setImageTag(imageTag)
 
-	fmt.Println("pulling new image...")
-	if err := dc.PullImage(configCopy.ContainerConfig.Image, imageTag); err != nil {
-		return fmt.Errorf("couldn't pulll image")
-	}
-
 	fmt.Println("creating new container...")
 	newContainerId, err := dc.createContainer(configCopy)
 	if err != nil {
+		if err := dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
+			return fmt.Errorf("couldn't restore old container: %w", err)
+		}
 		return err
 	}
 

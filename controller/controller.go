@@ -67,11 +67,6 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 		return fmt.Errorf("couldn't copy container confi: %w", err)
 	}
 
-	fmt.Println("pulling new image...")
-	if err := dc.PullImage(configCopy.ContainerConfig.Image, imageTag); err != nil {
-		return fmt.Errorf("couldn't pull image")
-	}
-
 	fmt.Printf("renaming %s (%s) to %s-old\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
 	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-old"); err != nil {
 		return fmt.Errorf("couldn't rename container: %w", err)
@@ -80,7 +75,7 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 	configCopy.setImageTag(imageTag)
 
 	fmt.Println("creating new container...")
-	newContainerId, err := dc.createContainer(configCopy)
+	newContainerId, err := dc.createContainer(configCopy, configCopy.ContainerConfig.Image, imageTag)
 	if err != nil {
 		if err := dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
 			return fmt.Errorf("couldn't restore old container: %w", err)
@@ -121,19 +116,6 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 	return nil
 }
 
-func (dc *DockerController) PullImage(imageName, imageTag string) error {
-	imageSplit := strings.Split(imageName, ":")
-	baseImage := imageSplit[0]
-
-	fmt.Println("PULLING: ", baseImage+":"+imageTag)
-	 _, err := dc.cli.ImagePull(dc.ctx, baseImage+":"+imageTag, types.ImagePullOptions{})
-	 if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (dc *DockerController) restoreContainer(oldContainerId, newContainerId, originalName string) error {
 	fmt.Printf("removing container %s\n", newContainerId)
 	if err := dc.removeContainer(newContainerId); err != nil {
@@ -165,7 +147,16 @@ func (dc *DockerController) renameContainer(containerId, newName string) error {
 	return dc.cli.ContainerRename(dc.ctx, containerId, newName)
 }
 
-func (dc *DockerController) createContainer(config OldContainerConfig) (string, error) {
+func (dc *DockerController) createContainer(config OldContainerConfig, imageName, imageTag string) (string, error) {
+	imageSplit := strings.Split(imageName, ":")
+	baseImage := imageSplit[0]
+
+	fmt.Println("PULLING: ", baseImage+":"+imageTag)
+	_, err := dc.cli.ImagePull(dc.ctx, baseImage+":"+imageTag, types.ImagePullOptions{})
+	if err != nil {
+		return "", err
+	}
+
 	resp, err := dc.cli.ContainerCreate(dc.ctx, config.ContainerConfig, config.ContainerHostConfig, nil, nil, config.ContainerName)
 	if err != nil {
 		return "", err

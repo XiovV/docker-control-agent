@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/XiovV/docker_control/controller"
 	"github.com/XiovV/docker_control/handlers"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 )
@@ -19,15 +17,10 @@ func main() {
 
 	dockerController := controller.New(cli, ctx)
 
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, container := range containers {
-		fmt.Println(container.ID)
-		fmt.Println(container.Names)
-	}
+	//containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	//containerId := os.Args[1]
 	//imageTag := os.Args[2]
@@ -37,6 +30,7 @@ func main() {
 	//if err != nil {
 	//	fmt.Println("couldn't update container:", err)
 	//}
+
 
 	updateHandler := handlers.NewUpdateHandler(dockerController)
 

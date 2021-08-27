@@ -35,7 +35,8 @@ func main() {
 	updateHandler := handlers.NewUpdateHandler(dockerController)
 
 	router := gin.Default()
-	router.POST("/api/containers/update", updateHandler.HandleContainerUpdate)
+	router.POST("/api/containers/update", updateHandler.ContainerUpdate)
+	router.POST("/api/images/pull", updateHandler.PullImage)
 
 	router.Run(":8080")
 }

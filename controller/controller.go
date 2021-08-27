@@ -60,7 +60,15 @@ func (config *OldContainerConfig) setImageTag(imageTag string) {
 	config.ContainerConfig.Image = 	fmt.Sprintf("%s:%s", baseImage, imageTag)
 }
 
-func (dc *DockerController) UpdateContainer(containerId, imageTag string) error {
+func (dc *DockerController) PullImage(image string) error {
+	_, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	fmt.Printf("copying config from %s\n", containerId)
 	configCopy, err := dc.copyContainerConfig(containerId)
 	if err != nil {
@@ -73,7 +81,7 @@ func (dc *DockerController) UpdateContainer(containerId, imageTag string) error 
 	}
 
 	fmt.Println("creating new container...")
-	newContainerId, err := dc.createContainer(configCopy, configCopy.ContainerConfig.Image, imageTag)
+	newContainerId, err := dc.createContainer(configCopy, image)
 	if err != nil {
 		fmt.Println("couldn't create new container:", err)
 		if err := dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
@@ -146,21 +154,10 @@ func (dc *DockerController) renameContainer(containerId, newName string) error {
 	return dc.cli.ContainerRename(dc.ctx, containerId, newName)
 }
 
-func (dc *DockerController) createContainer(config OldContainerConfig, imageName, imageTag string) (string, error) {
-	imageSplit := strings.Split(imageName, ":")
-	baseImage := imageSplit[0]
+func (dc *DockerController) createContainer(config OldContainerConfig, image string) (string, error) {
+	config.ContainerConfig.Image = image
 
-	newImage := baseImage+":"+imageTag
-
-	fmt.Println("PULLING: ", newImage)
-	_, err := dc.cli.ImagePull(dc.ctx, newImage, types.ImagePullOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	config.ContainerConfig.Image = newImage
-
-	fmt.Println("CREATING NEW CONTAINER:", newImage)
+	fmt.Println("CREATING NEW CONTAINER:", image)
 	resp, err := dc.cli.ContainerCreate(dc.ctx, config.ContainerConfig, config.ContainerHostConfig, nil, nil, config.ContainerName)
 	if err != nil {
 		return "", err

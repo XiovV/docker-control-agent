@@ -16,11 +16,15 @@ func NewUpdateHandler(controller *controller.DockerController) *UpdateHandler {
 }
 
 type UpdateRequest struct {
-	ImageTag string `json:"image_tag"`
+	Image     string `json:"image"`
 	Container string `json:"container"`
 }
 
-func (uh *UpdateHandler) HandleContainerUpdate(c *gin.Context) {
+type PullImageRequest struct {
+	Image string `json:"image"`
+}
+
+func (uh *UpdateHandler) ContainerUpdate(c *gin.Context) {
 	var updateRequest UpdateRequest
 
 	if err := c.ShouldBindJSON(&updateRequest); err != nil {
@@ -31,11 +35,23 @@ func (uh *UpdateHandler) HandleContainerUpdate(c *gin.Context) {
 	containerId := uh.controller.FindContainerIDByName(updateRequest.Container)
 	fmt.Println(containerId)
 
-	if err := uh.controller.UpdateContainer(containerId, updateRequest.ImageTag); err != nil {
+	if err := uh.controller.UpdateContainer(containerId, updateRequest.Image); err != nil {
 		c.Status(http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}
+}
 
+func (uh *UpdateHandler) PullImage(c *gin.Context) {
+	var pullImageRequest PullImageRequest
 
+	if err := c.ShouldBindJSON(&pullImageRequest); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	if err := uh.controller.PullImage(pullImageRequest.Image); err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
 }

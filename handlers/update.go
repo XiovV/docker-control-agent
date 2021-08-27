@@ -54,4 +54,9 @@ func (uh *UpdateHandler) PullImage(c *gin.Context) {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("pulled image:", pullImageRequest.Image)
+}
+
+func (uh *UpdateHandler) HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"version": "0.1.0"})
 }

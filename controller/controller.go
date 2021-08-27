@@ -63,6 +63,7 @@ func (config *OldContainerConfig) setImageTag(imageTag string) {
 }
 
 func (dc *DockerController) PullImage(image string) error {
+	fmt.Println("pulling new image:", image)
 	reader, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return err

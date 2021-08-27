@@ -37,6 +37,7 @@ func main() {
 	router := gin.Default()
 	router.POST("/api/containers/update", updateHandler.ContainerUpdate)
 	router.POST("/api/images/pull", updateHandler.PullImage)
+	router.GET("/api/health", updateHandler.HealthCheck)
 
 	router.Run(":8080")
 }

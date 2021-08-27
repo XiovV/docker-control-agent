@@ -66,17 +66,12 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 		return
 	}
 
-	var containers []models.ContainerStatus
-	for _, container := range nodeStatusRequest.Containers {
-		containerStatus, ok := uh.controller.GetContainerStatus(container)
-		if ok {
-			containers = append(containers, containerStatus)
-		}
-	}
+
+	containerStatus, _ := uh.controller.GetContainerStatus(nodeStatusRequest.Container)
+
 
 	response := models.NodeStatusResponse{
-		IsOnline:   true,
-		Containers: containers,
+		containerStatus,
 	}
 
 	c.JSON(http.StatusOK, response)

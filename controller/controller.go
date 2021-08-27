@@ -28,7 +28,11 @@ func New(cli *client.Client, ctx context.Context) *DockerController {
 }
 
 func (dc *DockerController) GetContainerStatus(containerName string) models.ContainerStatus {
-	foundContainer := dc.FindContainerByName(containerName)
+	foundContainer, ok := dc.FindContainerByName(containerName)
+
+	if !ok {
+		return models.ContainerStatus{}
+	}
 
 	containerStatus := models.ContainerStatus{
 		Name:   foundContainer.Names[0],
@@ -40,19 +44,19 @@ func (dc *DockerController) GetContainerStatus(containerName string) models.Cont
 	return containerStatus
 }
 
-func (dc *DockerController) FindContainerByName(containerName string) types.Container {
+func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool){
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
 	if err != nil {
-		panic(err)
+		return types.Container{}, false
 	}
 
 	for _, container := range containers {
 		if container.Names[0][1:] == containerName {
-			return container
+			return container, true
 		}
 	}
 
-	return types.Container{}
+	return types.Container{}, false
 }
 
 func (dc *DockerController) FindContainerIDByName(containerName string) string {

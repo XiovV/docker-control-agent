@@ -73,7 +73,6 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 		containers = append(containers, containerStatus)
 	}
 
-
 	response := models.NodeStatusResponse{
 		IsOnline:   true,
 		Containers: containers,

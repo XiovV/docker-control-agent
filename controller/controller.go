@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/client"
 	"io"
 	"os"
-	"strings"
 )
 
 type OldContainerConfig struct {
@@ -88,20 +87,16 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 	}, nil
 }
 
-func (config *OldContainerConfig) setImageTag(imageTag string) {
-	imageSplit := strings.Split(config.ContainerConfig.Image, ":")
-	baseImage := imageSplit[0]
-
-	config.ContainerConfig.Image = 	fmt.Sprintf("%s:%s", baseImage, imageTag)
-}
-
 func (dc *DockerController) PullImage(image string) error {
 	fmt.Println("pulling new image:", image)
 	reader, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return err
 	}
-	io.Copy(os.Stdout, reader)
+
+	if _, err = io.Copy(os.Stdout, reader); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/XiovV/docker_control/handlers"
 	"github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
+	"log"
 )
 
 func main() {
@@ -26,5 +27,7 @@ func main() {
 
 	router.GET("/api/health", updateHandler.HealthCheck)
 
-	router.Run(":8080")
+	if err = router.Run(":8080"); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -66,15 +66,14 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 		return
 	}
 
+	containerStatus, ok := uh.controller.GetContainerStatus(nodeStatusRequest.Container)
 
-	containerStatus, _ := uh.controller.GetContainerStatus(nodeStatusRequest.Container)
-
-
-	response := models.NodeStatusResponse{
-		containerStatus,
+	if !ok {
+		c.Status(http.StatusNotFound)
+		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, containerStatus)
 }
 
 func (uh *UpdateHandler) HealthCheck(c *gin.Context) {

@@ -17,26 +17,13 @@ func main() {
 
 	dockerController := controller.New(cli, ctx)
 
-	//containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	//containerId := os.Args[1]
-	//imageTag := os.Args[2]
-	//
-	//err = dockerController.UpdateContainer(containerId, imageTag)
-	//
-	//if err != nil {
-	//	fmt.Println("couldn't update container:", err)
-	//}
-
-
 	updateHandler := handlers.NewUpdateHandler(dockerController)
 
 	router := gin.Default()
 	router.POST("/api/containers/update", updateHandler.ContainerUpdate)
 	router.POST("/api/images/pull", updateHandler.PullImage)
+	router.POST("/api/nodes/status", updateHandler.NodeStatus)
+
 	router.GET("/api/health", updateHandler.HealthCheck)
 
 	router.Run(":8080")

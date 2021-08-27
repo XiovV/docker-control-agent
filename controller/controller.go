@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/XiovV/docker_control/models"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -24,6 +25,34 @@ type DockerController struct {
 
 func New(cli *client.Client, ctx context.Context) *DockerController {
 	return &DockerController{cli: cli, ctx: ctx}
+}
+
+func (dc *DockerController) GetContainerStatus(containerName string) models.ContainerStatus {
+	foundContainer := dc.FindContainerByName(containerName)
+
+	containerStatus := models.ContainerStatus{
+		Name:   foundContainer.Names[0],
+		ID:     foundContainer.ID,
+		Image:  foundContainer.Image,
+		Status: foundContainer.Status,
+	}
+
+	return containerStatus
+}
+
+func (dc *DockerController) FindContainerByName(containerName string) types.Container {
+	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, container := range containers {
+		if container.Names[0][1:] == containerName {
+			return container
+		}
+	}
+
+	return types.Container{}
 }
 
 func (dc *DockerController) FindContainerIDByName(containerName string) string {

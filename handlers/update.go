@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/XiovV/docker_control/controller"
+	"github.com/XiovV/docker_control/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -55,6 +56,30 @@ func (uh *UpdateHandler) PullImage(c *gin.Context) {
 		return
 	}
 	fmt.Println("pulled image:", pullImageRequest.Image)
+}
+
+func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
+	var nodeStatusRequest models.NodeStatusRequest
+
+	if err := c.ShouldBindJSON(&nodeStatusRequest); err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	var containers []models.ContainerStatus
+	var containerStatus models.ContainerStatus
+	for _, container := range nodeStatusRequest.Containers {
+		containerStatus = uh.controller.GetContainerStatus(container)
+		containers = append(containers, containerStatus)
+	}
+
+
+	response := models.NodeStatusResponse{
+		IsOnline:   true,
+		Containers: containers,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func (uh *UpdateHandler) HealthCheck(c *gin.Context) {

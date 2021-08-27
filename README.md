@@ -19,3 +19,18 @@
   ]
 }
 ```
+
+```json
+{
+  "node_name": "personal",
+  "is_online": true,
+  "containers": [
+    {
+      "container_name": "portainer",
+      "container_id": "311c42383ec3",
+      "image": "portainer/portainer-ce:2.6.2",
+      "status": "Up 8 hours"
+    }
+  ]
+}
+```

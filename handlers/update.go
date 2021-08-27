@@ -69,8 +69,10 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 	var containers []models.ContainerStatus
 	var containerStatus models.ContainerStatus
 	for _, container := range nodeStatusRequest.Containers {
-		containerStatus = uh.controller.GetContainerStatus(container)
-		containers = append(containers, containerStatus)
+		containerStatus, ok := uh.controller.GetContainerStatus(container)
+		if ok {
+			containers = append(containers, containerStatus)
+		}
 	}
 
 	response := models.NodeStatusResponse{

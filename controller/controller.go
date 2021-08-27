@@ -27,11 +27,11 @@ func New(cli *client.Client, ctx context.Context) *DockerController {
 	return &DockerController{cli: cli, ctx: ctx}
 }
 
-func (dc *DockerController) GetContainerStatus(containerName string) models.ContainerStatus {
+func (dc *DockerController) GetContainerStatus(containerName string) (models.ContainerStatus, bool) {
 	foundContainer, ok := dc.FindContainerByName(containerName)
 
 	if !ok {
-		return models.ContainerStatus{}
+		return models.ContainerStatus{}, false
 	}
 
 	containerStatus := models.ContainerStatus{
@@ -41,7 +41,7 @@ func (dc *DockerController) GetContainerStatus(containerName string) models.Cont
 		Status: foundContainer.Status,
 	}
 
-	return containerStatus
+	return containerStatus, false
 }
 
 func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool){

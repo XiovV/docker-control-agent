@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"strings"
+	"time"
 )
 
 type OldContainerConfig struct {
@@ -65,6 +66,8 @@ func (dc *DockerController) PullImage(image string) error {
 	if err != nil {
 		return err
 	}
+
+	time.Sleep(10 * time.Second)
 	return nil
 }
 

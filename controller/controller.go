@@ -9,7 +9,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 )
 
 type OldContainerConfig struct {

@@ -6,6 +6,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"io"
+	"os"
 	"strings"
 	"time"
 )
@@ -62,12 +64,12 @@ func (config *OldContainerConfig) setImageTag(imageTag string) {
 }
 
 func (dc *DockerController) PullImage(image string) error {
-	_, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
+	reader, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return err
 	}
+	io.Copy(os.Stdout, reader)
 
-	time.Sleep(10 * time.Second)
 	return nil
 }
 

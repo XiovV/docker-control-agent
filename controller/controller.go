@@ -41,7 +41,7 @@ func (dc *DockerController) GetContainerStatus(containerName string) (models.Con
 		Status: foundContainer.Status,
 	}
 
-	return containerStatus, false
+	return containerStatus, true
 }
 
 func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool){

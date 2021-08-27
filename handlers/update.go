@@ -67,7 +67,6 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 	}
 
 	var containers []models.ContainerStatus
-	var containerStatus models.ContainerStatus
 	for _, container := range nodeStatusRequest.Containers {
 		containerStatus, ok := uh.controller.GetContainerStatus(container)
 		if ok {

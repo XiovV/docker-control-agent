@@ -88,6 +88,10 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 }
 
 func (dc *DockerController) PullImage(image string) error {
+	if dc.doesImageExist(image) {
+		return nil
+	}
+
 	fmt.Println("pulling new image:", image)
 	reader, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
 	if err != nil {
@@ -99,6 +103,21 @@ func (dc *DockerController) PullImage(image string) error {
 	}
 
 	return nil
+}
+
+func (dc *DockerController) doesImageExist(image string) bool {
+	images, err := dc.cli.ImageList(dc.ctx, types.ImageListOptions{All: true})
+	if err != nil {
+		return false
+	}
+
+	for _, foundImage := range images {
+		if len(foundImage.RepoTags) > 0 {
+			return foundImage.RepoTags[0] == image
+		}
+	}
+
+	return false
 }
 
 func (dc *DockerController) UpdateContainer(containerId, image string) error {

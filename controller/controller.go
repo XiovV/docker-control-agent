@@ -118,7 +118,9 @@ func (dc *DockerController) doesImageExist(image string) bool {
 	for _, foundImage := range images {
 		if len(foundImage.RepoTags) > 0 {
 			fmt.Printf("%s == %s\n", foundImage.RepoTags[0], image)
-			return foundImage.RepoTags[0] == image
+			if foundImage.RepoTags[0] == image {
+				return true
+			}
 		}
 	}
 

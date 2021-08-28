@@ -88,7 +88,10 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 }
 
 func (dc *DockerController) PullImage(image string) error {
-	if dc.doesImageExist(image) {
+	doesImageExist := dc.doesImageExist(image)
+	fmt.Println("does image exist:", doesImageExist)
+
+	if doesImageExist {
 		return nil
 	}
 
@@ -108,11 +111,13 @@ func (dc *DockerController) PullImage(image string) error {
 func (dc *DockerController) doesImageExist(image string) bool {
 	images, err := dc.cli.ImageList(dc.ctx, types.ImageListOptions{All: true})
 	if err != nil {
+		fmt.Println("error while fetching images:", err)
 		return false
 	}
 
 	for _, foundImage := range images {
 		if len(foundImage.RepoTags) > 0 {
+			fmt.Printf("%s == %s\n", foundImage.RepoTags[0], image)
 			return foundImage.RepoTags[0] == image
 		}
 	}

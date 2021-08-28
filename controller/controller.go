@@ -58,19 +58,20 @@ func (dc *DockerController) FindContainerByName(containerName string) (types.Con
 	return types.Container{}, false
 }
 
-func (dc *DockerController) FindContainerIDByName(containerName string) string {
+func (dc *DockerController) FindContainerIDByName(containerName string) (string, bool) {
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
 	if err != nil {
 		panic(err)
 	}
 
 	for _, container := range containers {
+		fmt.Printf("%s == %s", container.Names[0][1:], containerName)
 		if container.Names[0][1:] == containerName {
-			return container.ID
+			return container.ID, true
 		}
 	}
 
-	return ""
+	return "", false
 }
 
 func (dc *DockerController) copyContainerConfig(containerId string) (OldContainerConfig, error) {

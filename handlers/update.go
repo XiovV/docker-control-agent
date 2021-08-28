@@ -33,7 +33,12 @@ func (uh *UpdateHandler) ContainerUpdate(c *gin.Context) {
 		return
 	}
 
-	containerId := uh.controller.FindContainerIDByName(updateRequest.Container)
+	containerId, ok := uh.controller.FindContainerIDByName(updateRequest.Container)
+	if !ok {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
 
 	if err := uh.controller.UpdateContainer(containerId, updateRequest.Image); err != nil {
 		c.Status(http.StatusInternalServerError)

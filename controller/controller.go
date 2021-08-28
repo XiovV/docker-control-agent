@@ -87,7 +87,7 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 	}, nil
 }
 
-func (dc *DockerController) PullImage(image string) error {
+func (dc *DockerController) pullImage(image string) error {
 	if dc.doesImageExist(image) {
 		return nil
 	}
@@ -133,6 +133,11 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	fmt.Printf("renaming %s (%s) to %s-old\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
 	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-old"); err != nil {
 		return fmt.Errorf("couldn't rename container: %w", err)
+	}
+
+	fmt.Println("pulling image", image)
+	if err = dc.pullImage(image); err != nil {
+		return fmt.Errorf("couldn't pull image: %w", err)
 	}
 
 	fmt.Println("creating new container...")

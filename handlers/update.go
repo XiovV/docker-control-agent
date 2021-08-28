@@ -46,21 +46,6 @@ func (uh *UpdateHandler) ContainerUpdate(c *gin.Context) {
 	}
 }
 
-func (uh *UpdateHandler) PullImage(c *gin.Context) {
-	var pullImageRequest PullImageRequest
-
-	if err := c.ShouldBindJSON(&pullImageRequest); err != nil {
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
-	if err := uh.controller.PullImage(pullImageRequest.Image); err != nil {
-		c.Status(http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("pulled image:", pullImageRequest.Image)
-}
-
 func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 	var nodeStatusRequest models.NodeStatusRequest
 

@@ -24,7 +24,6 @@ func main() {
 
 	router := gin.Default()
 	router.POST("/api/containers/update", updateHandler.ContainerUpdate)
-	router.POST("/api/images/pull", updateHandler.PullImage)
 	router.POST("/api/nodes/status", updateHandler.NodeStatus)
 
 	router.GET("/api/health", updateHandler.HealthCheck)

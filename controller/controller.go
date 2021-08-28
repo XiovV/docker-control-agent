@@ -65,7 +65,6 @@ func (dc *DockerController) FindContainerIDByName(containerName string) (string,
 	}
 
 	for _, container := range containers {
-		fmt.Printf("%s == %s", container.Names[0][1:], containerName)
 		if container.Names[0][1:] == containerName {
 			return container.ID, true
 		}
@@ -89,10 +88,7 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 }
 
 func (dc *DockerController) PullImage(image string) error {
-	doesImageExist := dc.doesImageExist(image)
-	fmt.Println("does image exist:", doesImageExist)
-
-	if doesImageExist {
+	if dc.doesImageExist(image) {
 		return nil
 	}
 
@@ -118,7 +114,6 @@ func (dc *DockerController) doesImageExist(image string) bool {
 
 	for _, foundImage := range images {
 		if len(foundImage.RepoTags) > 0 {
-			fmt.Printf("%s == %s\n", foundImage.RepoTags[0], image)
 			if foundImage.RepoTags[0] == image {
 				return true
 			}

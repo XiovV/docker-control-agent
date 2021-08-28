@@ -127,7 +127,7 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	fmt.Printf("copying config from %s\n", containerId)
 	configCopy, err := dc.copyContainerConfig(containerId)
 	if err != nil {
-		return fmt.Errorf("couldn't copy container confi: %w", err)
+		return fmt.Errorf("couldn't copy container config: %w", err)
 	}
 
 	fmt.Printf("renaming %s (%s) to %s-old\n", configCopy.ContainerName, containerId, configCopy.ContainerName)

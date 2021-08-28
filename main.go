@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/XiovV/docker_control/controller"
 	"github.com/XiovV/docker_control/handlers"
 	"github.com/docker/docker/client"
@@ -10,6 +11,7 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -27,6 +29,7 @@ func main() {
 
 	router.GET("/api/health", updateHandler.HealthCheck)
 
+	fmt.Println("docker_control is listening on 8080")
 	if err = router.Run(":8080"); err != nil {
 		log.Fatal(err)
 	}

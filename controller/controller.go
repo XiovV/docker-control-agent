@@ -139,7 +139,7 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	newContainerId, err := dc.createContainer(configCopy, image)
 	if err != nil {
 		fmt.Println("couldn't create new container:", err)
-		if err := dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
+		if err = dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
 			return fmt.Errorf("couldn't restore old container: %w", err)
 		}
 		return err
@@ -157,16 +157,14 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 		return err
 	}
 
-	isContainerRunning := dc.isContainerRunning(newContainerId)
-
-	if !isContainerRunning {
+	if !dc.isContainerRunning(newContainerId) {
 		fmt.Println("new container is not running, trying to restore old container...")
-		if err := dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
+		if err = dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
 			return fmt.Errorf("couldn't restore old container: %w", err)
 		}
 
 		fmt.Println("successfully restored container")
-		return fmt.Errorf("the new container didn't run, restored old container successfully")
+		return ErrContainerNotRunning
 	}
 
 	fmt.Printf("removing container %s-old (%s)\n", configCopy.ContainerName, containerId)
@@ -178,10 +176,27 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	return nil
 }
 
+func (dc *DockerController) doesContainerIDExist(containerId string) bool {
+	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{All: true})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, container := range containers {
+		if container.ID == containerId {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (dc *DockerController) restoreContainer(oldContainerId, newContainerId, originalName string) error {
-	fmt.Printf("RESTORE: removing container %s\n", newContainerId)
-	if err := dc.removeContainer(newContainerId); err != nil {
-		return err
+	if dc.doesContainerIDExist(newContainerId) {
+		fmt.Printf("RESTORE: removing newly created container %s\n", newContainerId)
+		if err := dc.removeContainer(newContainerId); err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("RESTORE: renaming %s to %s\n", oldContainerId, originalName)
@@ -212,7 +227,6 @@ func (dc *DockerController) renameContainer(containerId, newName string) error {
 func (dc *DockerController) createContainer(config OldContainerConfig, image string) (string, error) {
 	config.ContainerConfig.Image = image
 
-	fmt.Println("CREATING NEW CONTAINER:", image)
 	resp, err := dc.cli.ContainerCreate(dc.ctx, config.ContainerConfig, config.ContainerHostConfig, nil, nil, config.ContainerName)
 	if err != nil {
 		return "", err

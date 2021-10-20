@@ -1,19 +1,23 @@
-package handlers
+package app
 
 import (
 	"fmt"
+	"github.com/XiovV/docker_control/config"
 	"github.com/XiovV/docker_control/controller"
 	"github.com/XiovV/docker_control/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-type UpdateHandler struct {
+
+
+type App struct {
 	controller *controller.DockerController
+	config config.Config
 }
 
-func NewUpdateHandler(controller *controller.DockerController) *UpdateHandler {
-	return &UpdateHandler{controller: controller}
+func New(controller *controller.DockerController, config config.Config) *App {
+	return &App{controller: controller, config: config}
 }
 
 type UpdateRequest struct {
@@ -25,7 +29,15 @@ type PullImageRequest struct {
 	Image string `json:"image"`
 }
 
-func (uh *UpdateHandler) ContainerUpdate(c *gin.Context) {
+func (app *App) PullImage(c *gin.Context) {
+	apiKey := c.GetHeader("key")
+	fmt.Println(apiKey)
+
+	image := c.Query("image")
+	fmt.Println(image)
+}
+
+func (app *App) ContainerUpdate(c *gin.Context) {
 	var updateRequest UpdateRequest
 
 	if err := c.ShouldBindJSON(&updateRequest); err != nil {
@@ -33,20 +45,20 @@ func (uh *UpdateHandler) ContainerUpdate(c *gin.Context) {
 		return
 	}
 
-	containerId, ok := uh.controller.FindContainerIDByName(updateRequest.Container)
+	containerId, ok := app.controller.FindContainerIDByName(updateRequest.Container)
 	if !ok {
 		c.Status(http.StatusNotFound)
 		return
 	}
 
-	if err := uh.controller.UpdateContainer(containerId, updateRequest.Image); err != nil {
+	if err := app.controller.UpdateContainer(containerId, updateRequest.Image); err != nil {
 		c.Status(http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}
 }
 
-func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
+func (app *App) NodeStatus(c *gin.Context) {
 	var nodeStatusRequest models.NodeStatusRequest
 
 	if err := c.ShouldBindJSON(&nodeStatusRequest); err != nil {
@@ -54,7 +66,7 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 		return
 	}
 
-	containerStatus, ok := uh.controller.GetContainerStatus(nodeStatusRequest.Container)
+	containerStatus, ok := app.controller.GetContainerStatus(nodeStatusRequest.Container)
 
 	if !ok {
 		c.Status(http.StatusNotFound)
@@ -64,6 +76,6 @@ func (uh *UpdateHandler) NodeStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, containerStatus)
 }
 
-func (uh *UpdateHandler) HealthCheck(c *gin.Context) {
+func (app *App) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": "0.1.0"})
 }

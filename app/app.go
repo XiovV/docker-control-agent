@@ -1,15 +1,12 @@
 package app
 
 import (
-	"fmt"
+	"errors"
 	"github.com/XiovV/docker_control/config"
 	"github.com/XiovV/docker_control/controller"
-	"github.com/XiovV/docker_control/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
-
-
 
 type App struct {
 	controller *controller.DockerController
@@ -20,62 +17,31 @@ func New(controller *controller.DockerController, config config.Config) *App {
 	return &App{controller: controller, config: config}
 }
 
-type UpdateRequest struct {
-	Image     string `json:"image"`
-	Container string `json:"container"`
-}
-
-type PullImageRequest struct {
-	Image string `json:"image"`
-}
-
 func (app *App) PullImage(c *gin.Context) {
-	apiKey := c.GetHeader("key")
-	fmt.Println(apiKey)
-
 	image := c.Query("image")
-	fmt.Println(image)
+
+	err := app.controller.PullImage(image)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
-func (app *App) ContainerUpdate(c *gin.Context) {
-	var updateRequest UpdateRequest
+func (app *App) UpdateContainer(c *gin.Context) {
+	containerName := c.Query("container")
+	image := c.Query("image")
 
-	if err := c.ShouldBindJSON(&updateRequest); err != nil {
-		c.Status(http.StatusBadRequest)
+	err := app.controller.UpdateContainer(containerName, image)
+	if err != nil {
+		switch {
+		case errors.Is(err, controller.ErrContainerNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "the requested resource could not be found"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
-	containerId, ok := app.controller.FindContainerIDByName(updateRequest.Container)
-	if !ok {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	if err := app.controller.UpdateContainer(containerId, updateRequest.Image); err != nil {
-		c.Status(http.StatusInternalServerError)
-		fmt.Println(err)
-		return
-	}
-}
-
-func (app *App) NodeStatus(c *gin.Context) {
-	var nodeStatusRequest models.NodeStatusRequest
-
-	if err := c.ShouldBindJSON(&nodeStatusRequest); err != nil {
-		c.Status(http.StatusBadRequest)
-		return
-	}
-
-	containerStatus, ok := app.controller.GetContainerStatus(nodeStatusRequest.Container)
-
-	if !ok {
-		c.Status(http.StatusNotFound)
-		return
-	}
-
-	c.JSON(http.StatusOK, containerStatus)
-}
-
-func (app *App) HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"version": "0.1.0"})
 }

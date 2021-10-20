@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/XiovV/docker_control/models"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -22,26 +21,15 @@ type DockerController struct {
 	ctx context.Context
 }
 
-func New(cli *client.Client, ctx context.Context) *DockerController {
-	return &DockerController{cli: cli, ctx: ctx}
-}
-
-func (dc *DockerController) GetContainerStatus(containerName string) (models.ContainerStatus, bool) {
-	foundContainer, ok := dc.FindContainerByName(containerName)
-
-	if !ok {
-		return models.ContainerStatus{}, false
+func New() *DockerController {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
 	}
 
-	containerStatus := models.ContainerStatus{
-		Name:   foundContainer.Names[0],
-		ID:     foundContainer.ID,
-		Image:  foundContainer.Image,
-		Status: foundContainer.Status,
-	}
-
-	return containerStatus, true
+	return &DockerController{cli: cli, ctx: context.Background()}
 }
+
 
 func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool){
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
@@ -61,7 +49,7 @@ func (dc *DockerController) FindContainerByName(containerName string) (types.Con
 func (dc *DockerController) FindContainerIDByName(containerName string) (string, bool) {
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
 	if err != nil {
-		panic(err)
+		return "", false
 	}
 
 	for _, container := range containers {
@@ -77,7 +65,7 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 	containerJson, err := dc.cli.ContainerInspect(dc.ctx, containerId)
 
 	if err != nil {
-		return OldContainerConfig{}, nil
+		return OldContainerConfig{}, err
 	}
 
 	return OldContainerConfig{
@@ -87,12 +75,11 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 	}, nil
 }
 
-func (dc *DockerController) pullImage(image string) error {
+func (dc *DockerController) PullImage(image string) error {
 	if dc.doesImageExist(image) {
 		return nil
 	}
 
-	fmt.Println("pulling new image:", image)
 	reader, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return err
@@ -123,8 +110,12 @@ func (dc *DockerController) doesImageExist(image string) bool {
 	return false
 }
 
-func (dc *DockerController) UpdateContainer(containerId, image string) error {
-	fmt.Printf("copying config from %s\n", containerId)
+func (dc *DockerController) UpdateContainer(containerName, image string) error {
+	containerId, ok := dc.FindContainerIDByName(containerName)
+	if !ok {
+		return ErrContainerNotFound
+	}
+
 	configCopy, err := dc.copyContainerConfig(containerId)
 	if err != nil {
 		return fmt.Errorf("couldn't copy container config: %w", err)
@@ -133,11 +124,6 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	fmt.Printf("renaming %s (%s) to %s-old\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
 	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-old"); err != nil {
 		return fmt.Errorf("couldn't rename container: %w", err)
-	}
-
-	fmt.Println("pulling image", image)
-	if err = dc.pullImage(image); err != nil {
-		return fmt.Errorf("couldn't pull image: %w", err)
 	}
 
 	fmt.Println("creating new container...")
@@ -165,10 +151,9 @@ func (dc *DockerController) UpdateContainer(containerId, image string) error {
 	if !dc.isContainerRunning(newContainerId) {
 		fmt.Println("new container is not running, trying to restore old container...")
 		if err = dc.restoreContainer(containerId, newContainerId, configCopy.ContainerName); err != nil {
-			return fmt.Errorf("couldn't restore old container: %w", err)
+			return ErrContainerRestoreFailed
 		}
 
-		fmt.Println("successfully restored container")
 		return ErrContainerNotRunning
 	}
 

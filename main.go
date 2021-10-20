@@ -24,6 +24,7 @@ func main() {
 
 	router.PUT("/v1/images/pull", app.PullImage)
 	router.PUT("/v1/containers/update", app.UpdateContainer)
+	router.PUT("/v1/containers/rollback", app.RollbackContainer)
 
 	fmt.Println("agent is listening on :8080")
 	if err := router.Run(":8080"); err != nil {

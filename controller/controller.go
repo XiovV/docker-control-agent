@@ -47,11 +47,10 @@ func (dc *DockerController) FindContainerByName(containerName string) (types.Con
 }
 
 func (dc *DockerController) FindContainerIDByName(containerName string) (string, bool) {
-	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
+	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		return "", false
 	}
-
 	for _, container := range containers {
 		if container.Names[0][1:] == containerName {
 			return container.ID, true
@@ -110,19 +109,69 @@ func (dc *DockerController) doesImageExist(image string) bool {
 	return false
 }
 
-func (dc *DockerController) UpdateContainer(containerName, image string) error {
+func (dc *DockerController) RollbackContainer(containerName string) error {
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+"-rollback")
+	if !ok {
+		return ErrContainerNotFound
+	}
+
+	currentContainerId, ok := dc.FindContainerIDByName(containerName)
+	if !ok {
+		return ErrContainerNotFound
+	}
+
+	if err := dc.stopContainer(currentContainerId); err != nil {
+		return fmt.Errorf("coulnd't stop container %s: %w", containerName, err)
+	}
+
+	err := dc.removeContainer(currentContainerId)
+	if err != nil {
+		return fmt.Errorf("couldn't remove container %s: %w", currentContainerId, err)
+	}
+
+	err = dc.renameContainer(rollbackContainerId, containerName)
+	if err != nil {
+		return fmt.Errorf("couldn't rename container")
+	}
+
+	err = dc.startContainer(rollbackContainerId)
+	if err != nil {
+		return fmt.Errorf("error starting up ")
+	}
+
+	if !dc.isContainerRunning(rollbackContainerId) {
+		fmt.Println("rollback container is not running...")
+
+		return ErrContainerNotRunning
+	}
+
+	return nil
+}
+
+func (dc *DockerController) UpdateContainer(containerName, image string, keepContainer bool) error {
 	containerId, ok := dc.FindContainerIDByName(containerName)
 	if !ok {
 		return ErrContainerNotFound
 	}
+
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+"-rollback")
+	if ok {
+		fmt.Println("removing rollback container")
+		err := dc.removeContainer(rollbackContainerId)
+		if err != nil {
+			return fmt.Errorf("could not remove rollback container: %w", err)
+		}
+	}
+	fmt.Println("rollback container doesn't exist, continuing...")
+
 
 	configCopy, err := dc.copyContainerConfig(containerId)
 	if err != nil {
 		return fmt.Errorf("couldn't copy container config: %w", err)
 	}
 
-	fmt.Printf("renaming %s (%s) to %s-old\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
-	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-old"); err != nil {
+	fmt.Printf("renaming %s (%s) to %s-rollback\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
+	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-rollback"); err != nil {
 		return fmt.Errorf("couldn't rename container: %w", err)
 	}
 
@@ -138,7 +187,7 @@ func (dc *DockerController) UpdateContainer(containerName, image string) error {
 
 	fmt.Println("updated container id:", newContainerId)
 
-	fmt.Printf("stopping %s-old (%s)\n", configCopy.ContainerName, containerId)
+	fmt.Printf("stopping %s-rollback (%s)\n", configCopy.ContainerName, containerId)
 	if err = dc.stopContainer(containerId); err != nil {
 		return fmt.Errorf("coulnd't stop container %s: %w", configCopy.ContainerName, err)
 	}
@@ -157,11 +206,14 @@ func (dc *DockerController) UpdateContainer(containerName, image string) error {
 		return ErrContainerNotRunning
 	}
 
-	fmt.Printf("removing container %s-old (%s)\n", configCopy.ContainerName, containerId)
-	err = dc.removeContainer(containerId)
-	if err != nil {
-		return fmt.Errorf("couldn't remove container %s-old: %w", containerId, err)
+	if !keepContainer {
+		fmt.Printf("removing container %s-rollback (%s)\n", configCopy.ContainerName, containerId)
+		err = dc.removeContainer(containerId)
+		if err != nil {
+			return fmt.Errorf("couldn't remove container %s-rollback: %w", containerId, err)
+		}
 	}
+
 
 	return nil
 }

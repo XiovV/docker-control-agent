@@ -120,6 +120,10 @@ func (dc *DockerController) PullImage(image string) error {
 
 // doesImageExist goes through all images and checks if the requested image exists.
 func (dc *DockerController) doesImageExist(image string) bool {
+	if strings.Split(image, ":")[1] == "latest" {
+		return false
+	}
+
 	images, err := dc.cli.ImageList(dc.ctx, types.ImageListOptions{All: true})
 	if err != nil {
 		fmt.Println("error while fetching images:", err)

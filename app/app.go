@@ -52,7 +52,7 @@ func (app *App) UpdateContainer(c *gin.Context) {
 		return
 	}
 
-	keepContainer, err :=  strconv.ParseBool(c.Query("keep"))
+	keepContainer, err := strconv.ParseBool(c.Query("keep"))
 	if err != nil {
 		app.badRequestResponse(c, "keep value must be either true or false")
 		return
@@ -84,7 +84,7 @@ func (app *App) RollbackContainer(c *gin.Context) {
 
 		switch {
 		case errors.Is(err, controller.ErrContainerNotFound):
-			app.notFoundErrorResponse(c, "the requested container could does not exist")
+			app.notFoundErrorResponse(c, "the requested container does not exist")
 		case errors.Is(err, controller.ErrRollbackContainerNotFound):
 			app.notFoundErrorResponse(c, "the requested container does not have a rollback container")
 		case errors.Is(err, controller.ErrContainerNotRunning):

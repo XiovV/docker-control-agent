@@ -10,7 +10,7 @@ func (app *App) Authenticate() gin.HandlerFunc {
 		apiKey := c.GetHeader("key")
 
 		if !app.config.CompareHash(apiKey) {
-			c.AbortWithStatus(http.StatusForbidden)
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "invalid api key"})
 			return
 		}
 

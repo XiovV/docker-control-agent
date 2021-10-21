@@ -28,11 +28,14 @@ func (app *App) PullImage(c *gin.Context) {
 
 	err := app.controller.PullImage(image)
 	if err != nil {
-		app.internalErrorResponse(c, err.Error())
+		switch {
+		case errors.Is(err, controller.ErrImageFormatInvalid):
+			app.badRequestResponse(c, "image format is invalid")
+		default:
+			app.internalErrorResponse(c, err.Error())
+		}
 		return
 	}
-
-	c.Status(http.StatusOK)
 }
 
 func (app *App) UpdateContainer(c *gin.Context) {

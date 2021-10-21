@@ -1,3 +1,4 @@
+// Package controller is a wrapper for the docker API
 package controller
 
 import (
@@ -8,12 +9,15 @@ import (
 	"github.com/docker/docker/client"
 	"io"
 	"os"
+	"strings"
 )
 
 const (
 	RollbackContainerSuffix = "-rollback"
 )
 
+// OldContainerConfig holds the configuration settings of a container
+// that's being updated which will then be copied over to the updated container
 type OldContainerConfig struct {
 	ContainerName string
 	ContainerConfig *container.Config
@@ -25,6 +29,8 @@ type DockerController struct {
 	ctx context.Context
 }
 
+// New returns a pointer to DockerController.
+// Will panic if a new docker client couldn't be established
 func New() *DockerController {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -34,7 +40,10 @@ func New() *DockerController {
 	return &DockerController{cli: cli, ctx: context.Background()}
 }
 
-
+// FindContainerByName is used for finding a container by its name.
+// Note: it only searches through running containers.
+// If a container is found, it will return a types.Container and true, signifying that the
+// container has been found
 func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool){
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
 	if err != nil {
@@ -50,6 +59,10 @@ func (dc *DockerController) FindContainerByName(containerName string) (types.Con
 	return types.Container{}, false
 }
 
+// FindContainerIDByName tries to find a container by its name, and if it's found,
+// it will return a string containing the name of the container and true, signifying that
+// the container has been found. Unlike FindContainerByName, this method searches through
+// both running and stopped containers
 func (dc *DockerController) FindContainerIDByName(containerName string) (string, bool) {
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{All: true})
 	if err != nil {
@@ -64,6 +77,7 @@ func (dc *DockerController) FindContainerIDByName(containerName string) (string,
 	return "", false
 }
 
+// copyContainerConfig gets a copy of the config for a container with a specific id
 func (dc *DockerController) copyContainerConfig(containerId string) (OldContainerConfig, error) {
 	containerJson, err := dc.cli.ContainerInspect(dc.ctx, containerId)
 
@@ -78,7 +92,16 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 	}, nil
 }
 
+// PullImage pulls a requested image. It will return an ErrImageFormatInvalid
+// if the image is not in this format: imagename:tag. It checks if the requested
+// image already exists, and if it does it returns immediately.
 func (dc *DockerController) PullImage(image string) error {
+	imageParts := strings.Split(image, ":")
+
+	if len(imageParts) != 2 || imageParts[0] == "" || imageParts[1] == "" {
+		return ErrImageFormatInvalid
+	}
+
 	if dc.doesImageExist(image) {
 		return nil
 	}
@@ -95,6 +118,7 @@ func (dc *DockerController) PullImage(image string) error {
 	return nil
 }
 
+// doesImageExist goes through all images and checks if the requested image exists.
 func (dc *DockerController) doesImageExist(image string) bool {
 	images, err := dc.cli.ImageList(dc.ctx, types.ImageListOptions{All: true})
 	if err != nil {
@@ -113,6 +137,11 @@ func (dc *DockerController) doesImageExist(image string) bool {
 	return false
 }
 
+// RollbackContainer tries to find a container with the '-rollback' suffix in its name.
+// If it finds one, it will remove the '-rollback' suffix and run it, and it will
+// remove the previous container. It will return ErrContainerNotFound if the requested container
+// doesn't exist, and ErrRollbackContainerNotFound if the requested container doesn't have
+// its own fallback container.
 func (dc *DockerController) RollbackContainer(containerName string) error {
 	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+RollbackContainerSuffix)
 	if !ok {

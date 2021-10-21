@@ -10,7 +10,7 @@ var (
 	ErrContainerRestoreFailed = errors.New("couldn't restore container")
 	ErrContainerNotFound = errors.New("container does not exist")
 	ErrRollbackContainerNotFound = errors.New("rollback container does not exist ")
-
+	ErrImageFormatInvalid = errors.New("image format is invalid")
 )
 
 type ErrContainerStartFailed struct {

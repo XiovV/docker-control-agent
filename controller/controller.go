@@ -10,6 +10,10 @@ import (
 	"os"
 )
 
+const (
+	RollbackContainerSuffix = "-rollback"
+)
+
 type OldContainerConfig struct {
 	ContainerName string
 	ContainerConfig *container.Config
@@ -110,14 +114,14 @@ func (dc *DockerController) doesImageExist(image string) bool {
 }
 
 func (dc *DockerController) RollbackContainer(containerName string) error {
-	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+"-rollback")
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+RollbackContainerSuffix)
 	if !ok {
 		return ErrContainerNotFound
 	}
 
 	currentContainerId, ok := dc.FindContainerIDByName(containerName)
 	if !ok {
-		return ErrContainerNotFound
+		return ErrRollbackContainerNotFound
 	}
 
 	if err := dc.stopContainer(currentContainerId); err != nil {
@@ -131,17 +135,16 @@ func (dc *DockerController) RollbackContainer(containerName string) error {
 
 	err = dc.renameContainer(rollbackContainerId, containerName)
 	if err != nil {
-		return fmt.Errorf("couldn't rename container")
+		return fmt.Errorf("couldn't rename container %s: %w", rollbackContainerId, err)
 	}
 
 	err = dc.startContainer(rollbackContainerId)
 	if err != nil {
-		return fmt.Errorf("error starting up ")
+		return ErrContainerStartFailed{ContainerId: rollbackContainerId, Reason: err}
 	}
 
 	if !dc.isContainerRunning(rollbackContainerId) {
 		fmt.Println("rollback container is not running...")
-
 		return ErrContainerNotRunning
 	}
 
@@ -154,7 +157,7 @@ func (dc *DockerController) UpdateContainer(containerName, image string, keepCon
 		return ErrContainerNotFound
 	}
 
-	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+"-rollback")
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+RollbackContainerSuffix)
 	if ok {
 		fmt.Println("removing rollback container")
 		err := dc.removeContainer(rollbackContainerId)
@@ -171,7 +174,7 @@ func (dc *DockerController) UpdateContainer(containerName, image string, keepCon
 	}
 
 	fmt.Printf("renaming %s (%s) to %s-rollback\n", configCopy.ContainerName, containerId, configCopy.ContainerName)
-	if err = dc.renameContainer(containerId, configCopy.ContainerName+"-rollback"); err != nil {
+	if err = dc.renameContainer(containerId, configCopy.ContainerName+RollbackContainerSuffix); err != nil {
 		return fmt.Errorf("couldn't rename container: %w", err)
 	}
 

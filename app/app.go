@@ -21,9 +21,14 @@ func New(controller *controller.DockerController, config config.Config) *App {
 func (app *App) PullImage(c *gin.Context) {
 	image := c.Query("image")
 
+	if image == "" {
+		app.badRequestResponse(c, "image value must not be empty")
+		return
+	}
+
 	err := app.controller.PullImage(image)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		app.internalErrorResponse(c, err.Error())
 		return
 	}
 
@@ -33,9 +38,20 @@ func (app *App) PullImage(c *gin.Context) {
 func (app *App) UpdateContainer(c *gin.Context) {
 	containerName := c.Query("container")
 	image := c.Query("image")
+
+	if containerName == "" {
+		app.badRequestResponse(c, "container value must not be empty")
+		return
+	}
+
+	if image == "" {
+		app.badRequestResponse(c, "image value must not be empty")
+		return
+	}
+
 	keepContainer, err :=  strconv.ParseBool(c.Query("keep"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "keep value must be either true or false"})
+		app.badRequestResponse(c, "keep value must be either true or false")
 		return
 	}
 
@@ -43,7 +59,7 @@ func (app *App) UpdateContainer(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, controller.ErrContainerNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": "the requested resource could not be found"})
+			app.notFoundErrorResponse(c, "the requested container could not be found")
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
@@ -55,20 +71,28 @@ func (app *App) RollbackContainer(c *gin.Context) {
 	containerName := c.Query("container")
 
 	if containerName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "container must not be empty"})
+		app.badRequestResponse(c, "container value must not be empty")
 		return
 	}
 
 	err := app.controller.RollbackContainer(containerName)
 	if err != nil {
+		var containerStartFailedErr controller.ErrContainerStartFailed
+
 		switch {
 		case errors.Is(err, controller.ErrContainerNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": "this container does not have a rollback container"})
+			app.notFoundErrorResponse(c, "the requested container could does not exist")
+		case errors.Is(err, controller.ErrRollbackContainerNotFound):
+			app.notFoundErrorResponse(c, "the requested container does not have a rollback container")
+		case errors.Is(err, controller.ErrContainerNotRunning):
+			app.internalErrorResponse(c, "the container failed to start")
+		case errors.As(err, &containerStartFailedErr):
+			app.internalErrorResponse(c, containerStartFailedErr.Reason.Error())
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			app.internalErrorResponse(c, err.Error())
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "successfully restored container"})
+	app.successResponse(c, "successfully restored container")
 }

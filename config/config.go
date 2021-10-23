@@ -12,22 +12,19 @@ import (
 )
 
 type Config struct {
-	ApiKey string `json:"api_key"`
+	APIKey string `json:"api_key"`
 }
 
-func New() (*Config, error) {
+func New(filename string) (*Config, error) {
 	var apiKeyPlaintext string
-	file, err := os.Open("config.json")
+	file, err := os.Open(filename)
 
 	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			panic(err)
-		}
+		_ = file.Close()
 	}(file)
 
 	if errors.Is(err, os.ErrNotExist) {
-		_, err := os.Create("config.json")
+		_, err := os.Create(filename)
 		if err != nil {
 			return nil, err
 		}
@@ -41,14 +38,14 @@ func New() (*Config, error) {
 
 		apiKeyPlaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
 
-		cfg := &Config{ApiKey: fmt.Sprintf("%x", sha256.Sum256([]byte(apiKeyPlaintext)))}
+		cfg := &Config{APIKey: fmt.Sprintf("%x", sha256.Sum256([]byte(apiKeyPlaintext)))}
 
 		data, err := json.MarshalIndent(cfg, "", "	")
 		if err != nil {
 			return nil, err
 		}
 
-		err = ioutil.WriteFile("config.json", data, 0644)
+		err = ioutil.WriteFile(filename, data, 0644)
 		if err != nil {
 			return nil, err
 		}
@@ -72,5 +69,5 @@ func New() (*Config, error) {
 func (c Config) CompareHash(plaintext string) bool {
 	hash := fmt.Sprintf("%x", sha256.Sum256([]byte(plaintext)))
 
-	return c.ApiKey == hash
+	return c.APIKey == hash
 }

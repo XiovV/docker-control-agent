@@ -14,7 +14,11 @@ func main() {
 
 	dockerController := controller.New()
 
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("Successfully loaded config")
 
 	app := app.New(dockerController, cfg)

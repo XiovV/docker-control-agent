@@ -11,10 +11,10 @@ import (
 
 type App struct {
 	controller *controller.DockerController
-	config     config.Config
+	config     *config.Config
 }
 
-func New(controller *controller.DockerController, config config.Config) *App {
+func New(controller *controller.DockerController, config *config.Config) *App {
 	return &App{controller: controller, config: config}
 }
 

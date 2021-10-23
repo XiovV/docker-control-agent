@@ -15,9 +15,10 @@ type Config struct {
 	ApiKey string `json:"api_key"`
 }
 
-func New() Config {
+func New() (*Config, error) {
 	var apiKeyPlaintext string
 	file, err := os.Open("config.json")
+
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
@@ -28,32 +29,32 @@ func New() Config {
 	if errors.Is(err, os.ErrNotExist) {
 		_, err := os.Create("config.json")
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		randomBytes := make([]byte, 16)
 
 		_, err = rand.Read(randomBytes)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		apiKeyPlaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
 
-		cfg := Config{ApiKey: fmt.Sprintf("%x", sha256.Sum256([]byte(apiKeyPlaintext)))}
+		cfg := &Config{ApiKey: fmt.Sprintf("%x", sha256.Sum256([]byte(apiKeyPlaintext)))}
 
 		data, err := json.MarshalIndent(cfg, "", "	")
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		err = ioutil.WriteFile("config.json", data, 0644)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		fmt.Println("Your new api key is:", apiKeyPlaintext)
-		return cfg
+		return cfg, nil
 	}
 
 	bytes, err := ioutil.ReadAll(file)
@@ -65,7 +66,7 @@ func New() Config {
 		panic(err)
 	}
 
-	return cfg
+	return &cfg, nil
 }
 
 func (c Config) CompareHash(plaintext string) bool {

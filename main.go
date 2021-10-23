@@ -23,17 +23,7 @@ func main() {
 
 	app := app.New(dockerController, cfg)
 
-	router := gin.Default()
-
-	v1 := router.Group("/v1")
-	v1.Use(app.Authenticate())
-	{
-		v1.GET("/containers/image/:containerName", app.GetContainerImage)
-
-		v1.PUT("/images/pull", app.PullImage)
-		v1.PUT("/containers/update", app.UpdateContainer)
-		v1.PUT("/containers/rollback", app.RollbackContainer)
-	}
+	router := app.Router()
 
 	fmt.Println("agent is listening on :8080")
 	if err := router.Run(":8080"); err != nil {

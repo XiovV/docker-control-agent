@@ -19,8 +19,8 @@ const (
 // OldContainerConfig holds the configuration settings of a container
 // that's being updated which will then be copied over to the updated container
 type OldContainerConfig struct {
-	ContainerName string
-	ContainerConfig *container.Config
+	ContainerName       string
+	ContainerConfig     *container.Config
 	ContainerHostConfig *container.HostConfig
 }
 
@@ -44,7 +44,7 @@ func New() *DockerController {
 // Note: it only searches through running containers.
 // If a container is found, it will return a types.Container and true, signifying that the
 // container has been found
-func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool){
+func (dc *DockerController) FindContainerByName(containerName string) (types.Container, bool) {
 	containers, err := dc.cli.ContainerList(dc.ctx, types.ContainerListOptions{})
 	if err != nil {
 		return types.Container{}, false
@@ -88,7 +88,7 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 	return OldContainerConfig{
 		ContainerConfig:     containerJson.Config,
 		ContainerHostConfig: containerJson.HostConfig,
-		ContainerName: containerJson.ContainerJSONBase.Name,
+		ContainerName:       containerJson.ContainerJSONBase.Name,
 	}, nil
 }
 
@@ -147,7 +147,7 @@ func (dc *DockerController) doesImageExist(image string) bool {
 // doesn't exist, and ErrRollbackContainerNotFound if the requested container doesn't have
 // its own fallback container.
 func (dc *DockerController) RollbackContainer(containerName string) error {
-	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+RollbackContainerSuffix)
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName + RollbackContainerSuffix)
 	if !ok {
 		return ErrContainerNotFound
 	}
@@ -190,7 +190,7 @@ func (dc *DockerController) UpdateContainer(containerName, image string, keepCon
 		return ErrContainerNotFound
 	}
 
-	rollbackContainerId, ok := dc.FindContainerIDByName(containerName+RollbackContainerSuffix)
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName + RollbackContainerSuffix)
 	if ok {
 		fmt.Println("removing rollback container")
 		err := dc.removeContainer(rollbackContainerId)
@@ -199,7 +199,6 @@ func (dc *DockerController) UpdateContainer(containerName, image string, keepCon
 		}
 	}
 	fmt.Println("rollback container doesn't exist, continuing...")
-
 
 	configCopy, err := dc.copyContainerConfig(containerId)
 	if err != nil {
@@ -249,7 +248,6 @@ func (dc *DockerController) UpdateContainer(containerName, image string, keepCon
 			return fmt.Errorf("couldn't remove container %s-rollback: %w", containerId, err)
 		}
 	}
-
 
 	return nil
 }

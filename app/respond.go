@@ -20,4 +20,3 @@ func (app *App) notFoundErrorResponse(c *gin.Context, message string) {
 func (app *App) internalErrorResponse(c *gin.Context, message string) {
 	c.JSON(http.StatusInternalServerError, gin.H{"error": message})
 }
-

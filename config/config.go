@@ -18,7 +18,13 @@ type Config struct {
 func New() Config {
 	var apiKeyPlaintext string
 	file, err := os.Open("config.json")
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			panic(err)
+		}
+	}(file)
+
 	if errors.Is(err, os.ErrNotExist) {
 		_, err := os.Create("config.json")
 		if err != nil {
@@ -55,7 +61,9 @@ func New() Config {
 		panic(err)
 	}
 	var cfg Config
-	json.Unmarshal(bytes, &cfg)
+	if err := json.Unmarshal(bytes, &cfg); err != nil {
+		panic(err)
+	}
 
 	return cfg
 }

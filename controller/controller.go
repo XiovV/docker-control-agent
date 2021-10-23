@@ -158,7 +158,7 @@ func (dc *DockerController) RollbackContainer(containerName string) error {
 	}
 
 	if err := dc.stopContainer(currentContainerId); err != nil {
-		return fmt.Errorf("coulnd't stop container %s: %w", containerName, err)
+		return fmt.Errorf("couldn't stop container %s: %w", containerName, err)
 	}
 
 	err := dc.removeContainer(currentContainerId)

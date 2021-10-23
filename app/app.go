@@ -18,6 +18,23 @@ func New(controller *controller.DockerController, config config.Config) *App {
 	return &App{controller: controller, config: config}
 }
 
+func (app *App) GetContainerImage(c *gin.Context) {
+	containerName := c.Param("containerName")
+
+	if containerName == "" {
+		app.notFoundErrorResponse(c, "container not found")
+		return
+	}
+
+	container, ok := app.controller.FindContainerByName(containerName)
+	if !ok {
+		app.notFoundErrorResponse(c, "container not found")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"image": container.Image})
+}
+
 func (app *App) PullImage(c *gin.Context) {
 	image := c.Query("image")
 

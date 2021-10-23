@@ -14,7 +14,7 @@ func main() {
 
 	dockerController := controller.New()
 
-	cfg, err := config.New("config_test.json")
+	cfg, _, err := config.New("config.json")
 	if err != nil {
 		panic(err)
 	}

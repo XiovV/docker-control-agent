@@ -15,7 +15,7 @@ type Config struct {
 	APIKey string `json:"api_key"`
 }
 
-func New(filename string) (*Config, error) {
+func New(filename string) (*Config, string, error) {
 	var apiKeyPlaintext string
 	file, err := os.Open(filename)
 
@@ -26,14 +26,14 @@ func New(filename string) (*Config, error) {
 	if errors.Is(err, os.ErrNotExist) {
 		_, err := os.Create(filename)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		randomBytes := make([]byte, 16)
 
 		_, err = rand.Read(randomBytes)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		apiKeyPlaintext = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
@@ -42,16 +42,16 @@ func New(filename string) (*Config, error) {
 
 		data, err := json.MarshalIndent(cfg, "", "	")
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		err = ioutil.WriteFile(filename, data, 0644)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		fmt.Println("Your new api key is:", apiKeyPlaintext)
-		return cfg, nil
+		return cfg, apiKeyPlaintext, nil
 	}
 
 	bytes, err := ioutil.ReadAll(file)
@@ -63,7 +63,7 @@ func New(filename string) (*Config, error) {
 		panic(err)
 	}
 
-	return &cfg, nil
+	return &cfg, "", nil
 }
 
 func (c Config) CompareHash(plaintext string) bool {

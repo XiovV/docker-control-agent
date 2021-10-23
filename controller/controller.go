@@ -16,6 +16,14 @@ const (
 	RollbackContainerSuffix = "-rollback"
 )
 
+type ContainerController interface {
+	FindContainerByName(string) (types.Container, bool)
+	FindContainerIDByName(string) (string, bool)
+	PullImage(string) error
+	UpdateContainer(string, string, bool) error
+	RollbackContainer(string) error
+}
+
 // OldContainerConfig holds the configuration settings of a container
 // that's being updated which will then be copied over to the updated container
 type OldContainerConfig struct {

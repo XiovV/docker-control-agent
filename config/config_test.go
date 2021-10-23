@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -13,41 +14,27 @@ func TestNew(t *testing.T) {
 	var newApiKey string
 
 	t.Run("Generate a completely new config", func(t *testing.T) {
-		cfg, err := New(testConfigFilename)
-		if err != nil {
-			t.Fatal("got error:", err)
-		}
+		cfg, _, err := New(testConfigFilename)
+		assert.Nil(t, err)
 
 		newApiKey = cfg.APIKey
 
-		if newApiKey == "" {
-			t.Fatal("api key shouldn't be an empty string")
-		}
+		assert.NotEmpty(t, newApiKey)
 
-		if len(newApiKey) != 64 {
-			t.Fatalf("wrong api key length; expected %d, got %d", 64, len(newApiKey))
-		}
+		assert.Equal(t, 64, len(newApiKey))
 	})
 
 	t.Run("Load existing config", func(t *testing.T) {
-		cfg, err := New(testConfigFilename)
-		if err != nil {
-			t.Fatal("got error:", err)
-		}
+		cfg, _, err := New(testConfigFilename)
+		assert.Nil(t, err)
 
-		if cfg.APIKey == "" {
-			t.Fatal("api key shouldn't be an empty string")
-		}
+		assert.NotEmpty(t, cfg.APIKey)
 
-		if cfg.APIKey != newApiKey {
-			t.Fatalf("loaded invalid key; expected %s, got %s", newApiKey, cfg.APIKey)
-		}
+		assert.Equal(t, newApiKey, cfg.APIKey)
 	})
 }
 
 func removeConfig(t *testing.T) {
 	err := os.Remove(testConfigFilename)
-	if err != nil {
-		t.Fatal("got error:", err)
-	}
+	assert.Nil(t, err)
 }

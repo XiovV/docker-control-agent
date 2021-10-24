@@ -193,6 +193,12 @@ func (dc *DockerController) RollbackContainer(containerName string) error {
 }
 
 func (dc *DockerController) UpdateContainer(containerName, image string, keepContainer bool) error {
+	imageParts := strings.Split(image, ":")
+
+	if len(imageParts) != 2 || imageParts[0] == "" || imageParts[1] == "" {
+		return ErrImageFormatInvalid
+	}
+
 	containerId, ok := dc.FindContainerIDByName(containerName)
 	if !ok {
 		return ErrContainerNotFound

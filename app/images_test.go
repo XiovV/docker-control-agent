@@ -6,6 +6,7 @@ import (
 	"github.com/XiovV/docker_control/config"
 	"github.com/XiovV/docker_control/controller"
 	"github.com/docker/docker/api/types"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"net/http"
@@ -33,22 +34,13 @@ func (m *mockDockerController) FindContainerByName(containerName string) (types.
 	return container.(types.Container), args.Bool(1)
 }
 
-func (m *mockDockerController) FindContainerIDByName(containerName string) (string, bool) {
-	args := m.Called(containerName)
+func sendRequest(router *gin.Engine, method, location, apiKey string) *httptest.ResponseRecorder {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(method, location, nil)
+	req.Header.Add("key", apiKey)
+	router.ServeHTTP(w, req)
 
-	return args.String(0), args.Bool(1)
-}
-
-func (m *mockDockerController) UpdateContainer(containerName, image string, keep bool) error {
-	args := m.Called()
-
-	return args.Error(0)
-}
-
-func (m *mockDockerController) RollbackContainer(containerName string) error {
-	args := m.Called()
-
-	return args.Error(0)
+	return w
 }
 
 func TestPullImage(t *testing.T) {
@@ -73,10 +65,7 @@ func TestPullImage(t *testing.T) {
 	t.Run("Valid image name", func(t *testing.T) {
 		mockController.On("PullImage", "imageName:latest").Return(nil).Once()
 
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("PUT", "/v1/images/pull?image=imageName:latest", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "PUT", "/v1/images/pull?image=imageName:latest", apiKey)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -89,10 +78,7 @@ func TestPullImage(t *testing.T) {
 	t.Run("Image without name", func(t *testing.T) {
 		mockController.On("PullImage", ":latest").Return(controller.ErrImageFormatInvalid).Once()
 
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("PUT", "/v1/images/pull?image=:latest", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "PUT", "/v1/images/pull?image=:latest", apiKey)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -105,10 +91,7 @@ func TestPullImage(t *testing.T) {
 	t.Run("Image without tag", func(t *testing.T) {
 		mockController.On("PullImage", "imageName:").Return(controller.ErrImageFormatInvalid).Once()
 
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("PUT", "/v1/images/pull?image=imageName:", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "PUT", "/v1/images/pull?image=imageName:", apiKey)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -120,10 +103,7 @@ func TestPullImage(t *testing.T) {
 
 
 	t.Run("Empty image name", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("PUT", "/v1/images/pull?image=", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "PUT", "/v1/images/pull?image=", apiKey)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -133,13 +113,10 @@ func TestPullImage(t *testing.T) {
 		assert.Equal(t, "image value must not be empty", errorResponse.Error)
 	})
 
-	t.Run("Without image query parameter", func(t *testing.T) {
+	t.Run("Internal server error", func(t *testing.T) {
 		mockController.On("PullImage", "imageName:latest").Return(fmt.Errorf("some unknown error")).Once()
 
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("PUT", "/v1/images/pull?image=imageName:latest", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "PUT", "/v1/images/pull?image=imageName:latest", apiKey)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 
@@ -149,11 +126,8 @@ func TestPullImage(t *testing.T) {
 		assert.Equal(t, "some unknown error", errorResponse.Error)
 	})
 
-	t.Run("Internal server error", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("PUT", "/v1/images/pull", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+	t.Run("Without image query parameter", func(t *testing.T) {
+		w := sendRequest(router, "PUT", "/v1/images/pull", apiKey)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -186,10 +160,7 @@ func TestGetContainerImage(t *testing.T) {
 	t.Run("Valid container name", func(t *testing.T) {
 		mockController.On("FindContainerByName", "containerName").Return(types.Container{Image: "imageName:latest"}, true).Once()
 
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/v1/containers/image/containerName", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "GET", "/v1/containers/image/containerName", apiKey)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -200,10 +171,7 @@ func TestGetContainerImage(t *testing.T) {
 	})
 
 	t.Run("Empty container name", func(t *testing.T) {
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/v1/containers/image/", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "GET", "/v1/containers/image/", apiKey)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 
@@ -216,10 +184,7 @@ func TestGetContainerImage(t *testing.T) {
 	t.Run("Non-existent container name", func(t *testing.T) {
 		mockController.On("FindContainerByName", "doesntExist").Return(types.Container{Image: ""}, false).Once()
 
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/v1/containers/image/doesntExist", nil)
-		req.Header.Add("key", apiKey)
-		router.ServeHTTP(w, req)
+		w := sendRequest(router, "GET", "/v1/containers/image/doesntExist", apiKey)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 

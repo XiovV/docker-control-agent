@@ -9,3 +9,8 @@ audit:
 	@echo 'Running tests...'
 	go test ./...
 
+.PHONY: codecov
+codecov:
+	@echo 'Generating code coverage report...'
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out

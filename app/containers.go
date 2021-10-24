@@ -31,6 +31,8 @@ func (app *App) UpdateContainer(c *gin.Context) {
 	err = app.controller.UpdateContainer(containerName, image, keepContainer)
 	if err != nil {
 		switch {
+		case errors.Is(err, controller.ErrImageFormatInvalid):
+			app.badRequestResponse(c, "image format is invalid")
 		case errors.Is(err, controller.ErrContainerNotFound):
 			app.notFoundErrorResponse(c, "the requested container could not be found")
 		default:
@@ -38,6 +40,8 @@ func (app *App) UpdateContainer(c *gin.Context) {
 		}
 		return
 	}
+
+	app.successResponse(c, "container updated successfully")
 }
 
 func (app *App) RollbackContainer(c *gin.Context) {

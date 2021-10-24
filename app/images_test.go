@@ -2,7 +2,7 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"github.com/XiovV/docker_control/config"
 	"github.com/XiovV/docker_control/controller"
 	"github.com/docker/docker/api/types"
@@ -114,7 +114,7 @@ func TestPullImage(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		mockController.On("PullImage", "imageName:latest").Return(fmt.Errorf("some unknown error")).Once()
+		mockController.On("PullImage", "imageName:latest").Return(errors.New("some unknown error")).Once()
 
 		w := sendRequest(router, "PUT", "/v1/images/pull?image=imageName:latest", apiKey)
 

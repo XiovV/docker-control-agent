@@ -42,4 +42,6 @@ func (app *App) PullImage(c *gin.Context) {
 		}
 		return
 	}
+
+	app.successResponse(c, "image pulled successfully")
 }

@@ -10,7 +10,7 @@ func (app *App) successResponse(c *gin.Context, message string) {
 }
 
 func (app *App) badRequestResponse(c *gin.Context, message string) {
-	c.JSON(http.StatusOK, gin.H{"error": message})
+	c.JSON(http.StatusBadRequest, gin.H{"error": message})
 }
 
 func (app *App) notFoundErrorResponse(c *gin.Context, message string) {

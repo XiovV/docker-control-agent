@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/XiovV/docker_control/app"
-	"github.com/XiovV/docker_control/config"
-	"github.com/XiovV/docker_control/controller"
+	"github.com/XiovV/dokkup-agent/app"
+	"github.com/XiovV/dokkup-agent/config"
+	"github.com/XiovV/dokkup-agent/controller"
 	"github.com/gin-gonic/gin"
 	"log"
 )

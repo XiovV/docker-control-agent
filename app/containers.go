@@ -2,7 +2,7 @@ package app
 
 import (
 	"errors"
-	"github.com/XiovV/docker_control/controller"
+	"github.com/XiovV/dokkup-agent/controller"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"

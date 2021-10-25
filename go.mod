@@ -1,4 +1,4 @@
-module github.com/XiovV/docker_control
+module github.com/XiovV/dokkup-agent
 
 go 1.16
 

@@ -3,3 +3,4 @@ docker_control
 config.json
 config_test.json
 coverage.out
+dokkup-agent

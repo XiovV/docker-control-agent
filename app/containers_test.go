@@ -3,8 +3,8 @@ package app
 import (
 	"encoding/json"
 	"errors"
-	"github.com/XiovV/docker_control/config"
-	"github.com/XiovV/docker_control/controller"
+	"github.com/XiovV/dokkup-agent/config"
+	"github.com/XiovV/dokkup-agent/controller"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"

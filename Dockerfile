@@ -6,10 +6,10 @@ COPY . .
 
 EXPOSE 8080
 
-RUN go build -o docker_control_agent -ldflags="-s -w"
+RUN go build -o dokkup-agent -ldflags="-s -w"
 
 FROM alpine
 WORKDIR /app
-COPY --from=builder /app/docker_control_agent /app
+COPY --from=builder /app/dokkup-agent /app
 
-CMD ["./docker_control_agent"]
+CMD ["./dokkup-agent"]

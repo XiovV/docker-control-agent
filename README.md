@@ -6,7 +6,7 @@
 docker run -d -p 8080:8080 --name=dokkup-agent \
     --restart=always \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    xiovv/dokkup:latest
+    xiovv/dokkup-agent:latest
 ```
 
 ### Step 2: Get your API key

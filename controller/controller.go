@@ -19,7 +19,7 @@ const (
 type ContainerController interface {
 	FindContainerByName(string) (types.Container, bool)
 	FindContainerIDByName(string) (string, bool)
-	PullImage(string) error
+	PullImage(string) (bool, error)
 	UpdateContainer(string, string, bool) error
 	RollbackContainer(string) error
 }
@@ -103,27 +103,27 @@ func (dc *DockerController) copyContainerConfig(containerId string) (OldContaine
 // PullImage pulls a requested image. It will return an ErrImageFormatInvalid
 // if the image is not in this format: imagename:tag. It checks if the requested
 // image already exists, and if it does it returns immediately.
-func (dc *DockerController) PullImage(image string) error {
+func (dc *DockerController) PullImage(image string) (bool, error) {
 	imageParts := strings.Split(image, ":")
 
 	if len(imageParts) != 2 || imageParts[0] == "" || imageParts[1] == "" {
-		return ErrImageFormatInvalid
+		return false, ErrImageFormatInvalid
 	}
 
 	if dc.doesImageExist(image) {
-		return nil
+		return true, nil
 	}
 
 	reader, err := dc.cli.ImagePull(dc.ctx, image, types.ImagePullOptions{})
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if _, err = io.Copy(os.Stdout, reader); err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return false, nil
 }
 
 // doesImageExist goes through all images and checks if the requested image exists.

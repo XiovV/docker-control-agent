@@ -32,7 +32,7 @@ func (app *App) PullImage(c *gin.Context) {
 		return
 	}
 
-	err := app.controller.PullImage(image)
+	_, err := app.controller.PullImage(image)
 	if err != nil {
 		switch {
 		case errors.Is(err, controller.ErrImageFormatInvalid):

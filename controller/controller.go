@@ -119,6 +119,19 @@ func (dc *DockerController) PullImage(image string) (bool, error) {
 		return false, err
 	}
 
+	//rd := bufio.NewReader(reader)
+	//for {
+	//	str, err := rd.ReadString('\n')
+	//	if err == io.EOF {
+	//		break
+	//	}
+	//
+	//	if err != nil {
+	//		fmt.Println(err)
+	//	}
+	//	fmt.Println(len(str), str)
+	//}
+
 	if _, err = io.Copy(os.Stdout, reader); err != nil {
 		return false, err
 	}
@@ -155,12 +168,12 @@ func (dc *DockerController) doesImageExist(image string) bool {
 // doesn't exist, and ErrRollbackContainerNotFound if the requested container doesn't have
 // its own fallback container.
 func (dc *DockerController) RollbackContainer(containerName string) error {
-	rollbackContainerId, ok := dc.FindContainerIDByName(containerName + RollbackContainerSuffix)
+	currentContainerId, ok := dc.FindContainerIDByName(containerName)
 	if !ok {
 		return ErrContainerNotFound
 	}
 
-	currentContainerId, ok := dc.FindContainerIDByName(containerName)
+	rollbackContainerId, ok := dc.FindContainerIDByName(containerName + RollbackContainerSuffix)
 	if !ok {
 		return ErrRollbackContainerNotFound
 	}
@@ -263,6 +276,7 @@ func (dc *DockerController) UpdateContainer(containerName, image string, keepCon
 		}
 	}
 
+	fmt.Println("container updated successfully")
 	return nil
 }
 

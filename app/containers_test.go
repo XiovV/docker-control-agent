@@ -215,7 +215,7 @@ func TestRollbackContainer(t *testing.T) {
 	}
 
 	t.Run("Valid rollback request", func(t *testing.T) {
-		mockController.On("RollbackContainer", "containerName").
+		mockController.On("Rollback", "containerName").
 			Return(nil).Once()
 
 		w := sendRequest(router, "PUT", "/v1/containers/rollback?container=containerName", apiKey)
@@ -251,7 +251,7 @@ func TestRollbackContainer(t *testing.T) {
 	})
 
 	t.Run("Non-existent container", func(t *testing.T) {
-		mockController.On("RollbackContainer", "invalidContainer").
+		mockController.On("Rollback", "invalidContainer").
 			Return(controller.ErrContainerNotFound).Once()
 
 		w := sendRequest(router, "PUT", "/v1/containers/rollback?container=invalidContainer", apiKey)
@@ -265,7 +265,7 @@ func TestRollbackContainer(t *testing.T) {
 	})
 
 	t.Run("Non-existent rollback container", func(t *testing.T) {
-		mockController.On("RollbackContainer", "invalidContainer").
+		mockController.On("Rollback", "invalidContainer").
 			Return(controller.ErrRollbackContainerNotFound).Once()
 
 		w := sendRequest(router, "PUT", "/v1/containers/rollback?container=invalidContainer", apiKey)
@@ -279,7 +279,7 @@ func TestRollbackContainer(t *testing.T) {
 	})
 
 	t.Run("Container not running", func(t *testing.T) {
-		mockController.On("RollbackContainer", "containerName").
+		mockController.On("Rollback", "containerName").
 			Return(controller.ErrContainerNotRunning).Once()
 
 		w := sendRequest(router, "PUT", "/v1/containers/rollback?container=containerName", apiKey)
@@ -293,7 +293,7 @@ func TestRollbackContainer(t *testing.T) {
 	})
 
 	t.Run("Container failed to start", func(t *testing.T) {
-		mockController.On("RollbackContainer", "containerName").
+		mockController.On("Rollback", "containerName").
 			Return(controller.ErrContainerStartFailed{Reason: errors.New("some random reason")}).Once()
 
 		w := sendRequest(router, "PUT", "/v1/containers/rollback?container=containerName", apiKey)
@@ -307,7 +307,7 @@ func TestRollbackContainer(t *testing.T) {
 	})
 
 	t.Run("Internal server error", func(t *testing.T) {
-		mockController.On("RollbackContainer", "containerName").
+		mockController.On("Rollback", "containerName").
 			Return(errors.New("some unknown error")).Once()
 
 		w := sendRequest(router, "PUT", "/v1/containers/rollback?container=containerName", apiKey)

@@ -30,9 +30,7 @@ func (s *UpdaterServer) Serve() error {
 		log.Fatal(err)
 	}
 
-	var opts []grpc.ServerOption
-
-	grpcServer := grpc.NewServer(opts...)
+	grpcServer := grpc.NewServer(grpc.StreamInterceptor(s.authenticate))
 
 	pb.RegisterUpdaterServer(grpcServer, s)
 	pb.RegisterRollbackServer(grpcServer, s)
@@ -90,6 +88,10 @@ func (s *UpdaterServer) UpdateContainer(request *pb.UpdateRequest, stream pb.Upd
 
 func (s *UpdaterServer) RollbackContainer(request *pb.RollbackRequest, stream pb.Rollback_RollbackContainerServer) error {
 	fmt.Println("rollback container", request.GetContainer())
+
+
+	//fmt.Println(apiKey)
+
 
 	if request.GetContainer() == "" {
 		stream.Send(&pb.Response{Message: "container value must not be empty"})

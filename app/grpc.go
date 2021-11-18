@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-type UpdaterServer struct {
+type Server struct {
 	pb.UnimplementedUpdaterServer
 	pb.UnimplementedRollbackServer
 
@@ -20,11 +20,11 @@ type UpdaterServer struct {
 	config     *config.Config
 }
 
-func NewUpdaterServer(controller controller.ContainerController, config *config.Config) *UpdaterServer {
-	return &UpdaterServer{controller: controller, config: config}
+func NewServer(controller controller.ContainerController, config *config.Config) *Server {
+	return &Server{controller: controller, config: config}
 }
 
-func (s *UpdaterServer) Serve() error {
+func (s *Server) Serve() error {
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 8080))
 	if err != nil {
 		log.Fatal(err)
@@ -39,7 +39,7 @@ func (s *UpdaterServer) Serve() error {
 	return grpcServer.Serve(lis)
 }
 
-func (s *UpdaterServer) UpdateContainer(request *pb.UpdateRequest, stream pb.Updater_UpdateContainerServer) error {
+func (s *Server) UpdateContainer(request *pb.UpdateRequest, stream pb.Updater_UpdateContainerServer) error {
 	container, ok := s.controller.FindContainerByName(request.ContainerName)
 	if !ok {
 		s.sendMessage(stream, fmt.Sprintf("container with the name %s does not exist", request.ContainerName))
@@ -86,7 +86,7 @@ func (s *UpdaterServer) UpdateContainer(request *pb.UpdateRequest, stream pb.Upd
 	return nil
 }
 
-func (s *UpdaterServer) RollbackContainer(request *pb.RollbackRequest, stream pb.Rollback_RollbackContainerServer) error {
+func (s *Server) RollbackContainer(request *pb.RollbackRequest, stream pb.Rollback_RollbackContainerServer) error {
 	fmt.Println("rollback container", request.GetContainer())
 
 
@@ -121,7 +121,7 @@ func (s *UpdaterServer) RollbackContainer(request *pb.RollbackRequest, stream pb
 	return nil
 }
 
-func (s *UpdaterServer) sendMessage(stream pb.Updater_UpdateContainerServer, message string) {
+func (s *Server) sendMessage(stream pb.Updater_UpdateContainerServer, message string) {
 
 	stream.Send(&pb.Response{Message: message})
 }

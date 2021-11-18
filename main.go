@@ -20,7 +20,7 @@ func main() {
 
 	fmt.Println("Successfully loaded config")
 
-	app := app.NewUpdaterServer(dockerController, cfg)
+	app := app.NewServer(dockerController, cfg)
 
 	if err := app.Serve(); err != nil {
 		log.Fatal(err)
